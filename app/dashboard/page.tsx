@@ -15,15 +15,28 @@ export default function DashboardPage() {
 
   const fetchData = async () => {
     setLoading(true);
-    const [expRes, conRes, rfRes] = await Promise.all([
-      supabase.from("expenses").select("*"),
-      supabase.from("contributions").select("*"),
-      supabase.from("required_fund").select("*"),
-    ]);
-    const expenses: Expense[] = expRes.data ?? [];
-    const contributions: Contribution[] = conRes.data ?? [];
-    const requiredFunds: RequiredFund[] = rfRes.data ?? [];
-    setMetrics(calcDashboardMetrics(expenses, contributions, requiredFunds));
+    try {
+      console.log("[v0] Fetching data from Supabase...");
+      const [expRes, conRes, rfRes] = await Promise.all([
+        supabase.from("expenses").select("*"),
+        supabase.from("contributions").select("*"),
+        supabase.from("required_fund").select("*"),
+      ]);
+      console.log("[v0] Expenses response:", expRes);
+      console.log("[v0] Contributions response:", conRes);
+      console.log("[v0] Required fund response:", rfRes);
+      
+      if (expRes.error) console.error("[v0] Expenses error:", expRes.error);
+      if (conRes.error) console.error("[v0] Contributions error:", conRes.error);
+      if (rfRes.error) console.error("[v0] Required fund error:", rfRes.error);
+      
+      const expenses: Expense[] = expRes.data ?? [];
+      const contributions: Contribution[] = conRes.data ?? [];
+      const requiredFunds: RequiredFund[] = rfRes.data ?? [];
+      setMetrics(calcDashboardMetrics(expenses, contributions, requiredFunds));
+    } catch (error) {
+      console.error("[v0] Error fetching data:", error);
+    }
     setLoading(false);
   };
 
