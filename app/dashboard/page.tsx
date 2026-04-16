@@ -133,7 +133,7 @@ export default function DashboardPage() {
                           name={name}
                           type={s.type}
                           amount={s.amount}
-                          counterpart={s.counterpart}
+                          counterparts={s.counterparts}
                         />
                       );
                     })}

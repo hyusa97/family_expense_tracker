@@ -83,11 +83,16 @@ export default function ContributorCard({
             <div className="text-lg font-bold font-mono-jet text-white">
               {formatCurrency(settlement.amount)}
             </div>
-            <div className="text-xs text-gray-500 mt-0.5">
-              {settlement.type === "paying" ? "Pay to" : "Receive from"}{" "}
-              <span className={`font-medium ${settlement.type === "paying" ? "text-red-300" : "text-emerald-300"}`}>
-                {settlement.counterpart}
-              </span>
+            <div className="text-xs text-gray-500 mt-1 space-y-0.5">
+              {settlement.counterparts.map((cp, idx) => (
+                <div key={idx}>
+                  {settlement.type === "paying" ? "Pay to" : "Receive from"}{" "}
+                  <span className={`font-medium ${settlement.type === "paying" ? "text-red-300" : "text-emerald-300"}`}>
+                    {cp.name}
+                  </span>
+                  <span className="text-gray-400 ml-1">({formatCurrency(cp.amount)})</span>
+                </div>
+              ))}
             </div>
           </div>
         </div>
