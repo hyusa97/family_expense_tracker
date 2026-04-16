@@ -138,15 +138,24 @@ export function calcDashboardMetrics(
 export function getContributorSettlement(
   name: string,
   settlements: Settlement[]
-): { type: "paying" | "receiving" | "settled"; amount: number; counterpart: string } {
-  const paying = settlements.find((s) => s.from === name);
-  if (paying) return { type: "paying", amount: paying.amount, counterpart: paying.to };
+): { type: "paying" | "receiving" | "settled"; amount: number; counterparts: { name: string; amount: number }[] } {
+  // Find all settlements where this person is paying
+  const payingSettlements = settlements.filter((s) => s.from === name);
+  if (payingSettlements.length > 0) {
+    const totalAmount = payingSettlements.reduce((sum, s) => sum + s.amount, 0);
+    const counterparts = payingSettlements.map((s) => ({ name: s.to, amount: s.amount }));
+    return { type: "paying", amount: totalAmount, counterparts };
+  }
 
-  const receiving = settlements.find((s) => s.to === name);
-  if (receiving)
-    return { type: "receiving", amount: receiving.amount, counterpart: receiving.from };
+  // Find all settlements where this person is receiving
+  const receivingSettlements = settlements.filter((s) => s.to === name);
+  if (receivingSettlements.length > 0) {
+    const totalAmount = receivingSettlements.reduce((sum, s) => sum + s.amount, 0);
+    const counterparts = receivingSettlements.map((s) => ({ name: s.from, amount: s.amount }));
+    return { type: "receiving", amount: totalAmount, counterparts };
+  }
 
-  return { type: "settled", amount: 0, counterpart: "" };
+  return { type: "settled", amount: 0, counterparts: [] };
 }
 
 export function formatCurrency(amount: number): string {
