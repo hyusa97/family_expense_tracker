@@ -47,11 +47,11 @@ export function calcTreasuryBalance(
 
 export function calcContributorStats(
   contributions: Contribution[],
-  requiredFund: number
+  totalContribution: number,
+  totalRequiredFund: number
 ): ContributorStats[] {
   // Each person's required share of the fund
-  const perPersonShare = ( totalContribution + requiredFund ) / DEFAULT_SHARE_PERSONS;
-  
+  const perPersonShare = (totalContribution + totalRequiredFund) / DEFAULT_SHARE_PERSONS;
   return CONTRIBUTORS.map((name) => {
     // Get contributions made BY this person (given_to indicates who they gave money for)
     const contributed = contributions
@@ -124,7 +124,11 @@ export function calcDashboardMetrics(
     totalContribution
   );
   const treasuryBalance = calcTreasuryBalance(totalContribution, totalExpense);
-  const contributorStats = calcContributorStats(contributions, perContributorShare);
+  const contributorStats = calcContributorStats(
+  contributions,
+  totalContribution,
+  totalRequiredFund
+);
   const settlements = calcSettlements(contributorStats, actualRequiredFund);
 
   return {
