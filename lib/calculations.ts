@@ -47,15 +47,19 @@ export function calcTreasuryBalance(
 
 export function calcContributorStats(
   contributions: Contribution[],
-  share: number
+  requiredFund: number
 ): ContributorStats[] {
+  // Each person's required share of the fund
+  const perPersonShare = requiredFund / DEFAULT_SHARE_PERSONS;
+  
   return CONTRIBUTORS.map((name) => {
+    // Get contributions made BY this person (given_to indicates who they gave money for)
     const contributed = contributions
       .filter((c) => c.partner_name === name)
       .reduce((sum, c) => sum + Number(c.amount), 0);
-    const remaining = Math.max(0, share - contributed);
-    const balance = contributed - share;
-    return { name, contributed, share, remaining, balance };
+    const remaining = Math.max(0, perPersonShare - contributed);
+    const balance = contributed - perPersonShare;
+    return { name, contributed, share: perPersonShare, remaining, balance };
   });
 }
 
