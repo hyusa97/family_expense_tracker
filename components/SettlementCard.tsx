@@ -4,14 +4,14 @@ interface SettlementCardProps {
   name: string;
   type: "paying" | "receiving" | "settled";
   amount: number;
-  counterpart: string;
+  counterparts: { name: string; amount: number }[];
 }
 
 export default function SettlementCard({
   name,
   type,
   amount,
-  counterpart,
+  counterparts,
 }: SettlementCardProps) {
   const initials = name
     .split(" ")
@@ -81,13 +81,18 @@ export default function SettlementCard({
           <div className="text-lg font-bold font-mono-jet text-white">
             {formatCurrency(amount)}
           </div>
-          <div className="text-xs text-gray-500 mt-0.5">
-            {type === "paying" ? "To" : "From"}{" "}
-            <span className="text-gray-300 font-medium">{counterpart}</span>
+          <div className="text-xs text-gray-500 mt-1 space-y-0.5">
+            {counterparts.map((cp, idx) => (
+              <div key={idx}>
+                {type === "paying" ? "To" : "From"}{" "}
+                <span className="text-gray-300 font-medium">{cp.name}</span>
+                <span className="text-gray-400 ml-1">({formatCurrency(cp.amount)})</span>
+              </div>
+            ))}
           </div>
         </div>
       ) : (
-        <div className="text-sm text-gray-500">All dues cleared ✓</div>
+        <div className="text-sm text-gray-500">All dues cleared</div>
       )}
     </div>
   );

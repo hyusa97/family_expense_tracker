@@ -22,8 +22,13 @@ export function calcTotalRequiredFund(requiredFunds: RequiredFund[]): number {
   return requiredFunds.reduce((sum, r) => sum + Number(r.amount), 0);
 }
 
-export function calcPerContributorShare(totalExpense: number): number {
-  return totalExpense / 4;
+export const DEFAULT_SHARE_PERSONS = 4;
+
+export function calcPerContributorShare(
+  totalContribution: number,
+  sharePersons: number = DEFAULT_SHARE_PERSONS
+): number {
+  return totalContribution / sharePersons;
 }
 
 export function calcActualRequiredFund(
@@ -42,15 +47,19 @@ export function calcTreasuryBalance(
 
 export function calcContributorStats(
   contributions: Contribution[],
-  share: number
+  totalContribution: number,
+  totalRequiredFund: number
 ): ContributorStats[] {
+  // Each person's required share of the fund
+  const perPersonShare = (totalContribution + totalRequiredFund) / DEFAULT_SHARE_PERSONS;
   return CONTRIBUTORS.map((name) => {
+    // Get contributions made BY this person (given_to indicates who they gave money for)
     const contributed = contributions
       .filter((c) => c.partner_name === name)
       .reduce((sum, c) => sum + Number(c.amount), 0);
-    const remaining = Math.max(0, share - contributed);
-    const balance = contributed - share;
-    return { name, contributed, share, remaining, balance };
+    const remaining = Math.max(0, perPersonShare - contributed);
+    const balance = contributed - perPersonShare;
+    return { name, contributed, share: perPersonShare, remaining, balance };
   });
 }
 
@@ -109,13 +118,17 @@ export function calcDashboardMetrics(
   const totalExpense = calcTotalExpense(expenses);
   const totalContribution = calcTotalContribution(contributions);
   const totalRequiredFund = calcTotalRequiredFund(requiredFunds);
-  const perContributorShare = calcPerContributorShare(totalExpense);
+  const perContributorShare = calcPerContributorShare(totalContribution);
   const actualRequiredFund = calcActualRequiredFund(
     totalRequiredFund,
     totalContribution
   );
   const treasuryBalance = calcTreasuryBalance(totalContribution, totalExpense);
-  const contributorStats = calcContributorStats(contributions, perContributorShare);
+  const contributorStats = calcContributorStats(
+  contributions,
+  totalContribution,
+  totalRequiredFund
+);
   const settlements = calcSettlements(contributorStats, actualRequiredFund);
 
   return {
@@ -133,15 +146,24 @@ export function calcDashboardMetrics(
 export function getContributorSettlement(
   name: string,
   settlements: Settlement[]
-): { type: "paying" | "receiving" | "settled"; amount: number; counterpart: string } {
-  const paying = settlements.find((s) => s.from === name);
-  if (paying) return { type: "paying", amount: paying.amount, counterpart: paying.to };
+): { type: "paying" | "receiving" | "settled"; amount: number; counterparts: { name: string; amount: number }[] } {
+  // Find all settlements where this person is paying
+  const payingSettlements = settlements.filter((s) => s.from === name);
+  if (payingSettlements.length > 0) {
+    const totalAmount = payingSettlements.reduce((sum, s) => sum + s.amount, 0);
+    const counterparts = payingSettlements.map((s) => ({ name: s.to, amount: s.amount }));
+    return { type: "paying", amount: totalAmount, counterparts };
+  }
 
-  const receiving = settlements.find((s) => s.to === name);
-  if (receiving)
-    return { type: "receiving", amount: receiving.amount, counterpart: receiving.from };
+  // Find all settlements where this person is receiving
+  const receivingSettlements = settlements.filter((s) => s.to === name);
+  if (receivingSettlements.length > 0) {
+    const totalAmount = receivingSettlements.reduce((sum, s) => sum + s.amount, 0);
+    const counterparts = receivingSettlements.map((s) => ({ name: s.from, amount: s.amount }));
+    return { type: "receiving", amount: totalAmount, counterparts };
+  }
 
-  return { type: "settled", amount: 0, counterpart: "" };
+  return { type: "settled", amount: 0, counterparts: [] };
 }
 
 export function formatCurrency(amount: number): string {
